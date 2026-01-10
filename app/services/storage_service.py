@@ -2,7 +2,9 @@ from fastapi import UploadFile
 from pathlib import Path
 import uuid
 import shutil
+import cv2
 import random
+from app.services.video_processing import extract_frames
 
 TEMP_VIDEO_DIR = Path("D:\\Projects\\Online-banking-system\\kyc-ml-service\\temp\\videos")
 TEMP_FRAMES_DIR = Path("D:\\Projects\\Online-banking-system\\kyc-ml-service\\temp\\frames")
@@ -17,3 +19,31 @@ def save_upload_video(file: UploadFile) -> str:
         shutil.copyfileobj(file.file, buffer)
 
     return file_path
+
+def save_extracted_frames(video_name: str, frames: list) -> list[str]:
+    core_name = Path(video_name).stem
+    frames_dir = TEMP_FRAMES_DIR / f"{core_name}"
+    frames_dir.mkdir(parents=True, exist_ok=True)
+
+    frames_names = []
+
+    for idx, frame in enumerate(frames):
+        frame_name = f"{core_name}_{idx:03d}.jpg"
+        frame_path = frames_dir / frame_name
+        cv2.imwrite(str(frame_path), frame)
+        frames_names.append(frame_name)
+
+    return frames_names
+
+def save_upload_video_and_frames(file: UploadFile) -> list[str]:
+    session_id = f"session_{uuid.uuid4().hex}"
+    video_name = f"{session_id}.mp4"
+    file_path = TEMP_VIDEO_DIR / video_name
+        
+    with file_path.open("wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    frames = extract_frames(file_path)
+
+    pathes = save_extracted_frames(video_name, frames)
+    return pathes
