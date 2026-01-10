@@ -1,5 +1,6 @@
 from fastapi import UploadFile
 from pathlib import Path
+from typing import Tuple
 import uuid
 import shutil
 import cv2
@@ -35,7 +36,7 @@ def save_extracted_frames(video_name: str, frames: list) -> list[str]:
 
     return frames_names
 
-def save_upload_video_and_frames(file: UploadFile) -> list[str]:
+def save_upload_video_and_frames(file: UploadFile) -> Tuple[list[str], str]:
     session_id = f"session_{uuid.uuid4().hex}"
     video_name = f"{session_id}.mp4"
     file_path = TEMP_VIDEO_DIR / video_name
@@ -46,4 +47,15 @@ def save_upload_video_and_frames(file: UploadFile) -> list[str]:
     frames = extract_frames(file_path)
 
     pathes = save_extracted_frames(video_name, frames)
-    return pathes
+    delete_vid_msg = deleve_video(video_name)
+
+    return pathes, delete_vid_msg
+
+def deleve_video(video_name: str) -> str:
+    video_path = TEMP_VIDEO_DIR / video_name
+
+    if video_path.exists() and video_path.is_file():
+        video_path.unlink()
+        return f"Deleted: {video_path}"
+    else:
+        return f"File not foun: {video_path}"
