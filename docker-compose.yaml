@@ -1,0 +1,44 @@
+services:
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    hostname: rabbitmq-CELERY_BROKER
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 10s
+      retries: 5
+  redis:
+    image: redis:7-alpine
+    container_name: redis-CELERY_RESULT_BACKEND
+    ports:
+      - "${REDIS_PORT}:6379"
+    volumes:
+      - redis-data:/data
+  celery_worker:
+    build: .
+    container_name: celery_worker
+    command: celery -A app.celery_app worker --loglevel=info --pool=solo
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./app:/app/app 
+    environment:
+      - CELERY_BROKER_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672//
+      - CELERY_RESULT_BACKEND=redis://redis:${REDIS_PORT}/${REDIS_DB}
+    env_file:
+      - .env
+
+volumes:
+  rabbitmq-data:
+  redis-data:
