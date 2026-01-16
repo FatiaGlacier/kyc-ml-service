@@ -4,7 +4,6 @@ from typing import Tuple
 import uuid
 import shutil
 import cv2
-import random
 from app.services.video_processing import extract_frames
 
 TEMP_VIDEO_DIR = Path("D:\\Projects\\Online-banking-system\\kyc-ml-service\\temp\\videos")
@@ -12,14 +11,15 @@ TEMP_FRAMES_DIR = Path("D:\\Projects\\Online-banking-system\\kyc-ml-service\\tem
 TEMP_VIDEO_DIR.mkdir(parents=True, exist_ok=True)
 TEMP_FRAMES_DIR.mkdir(parents=True, exist_ok=True)
 
-def save_upload_video(file: UploadFile) -> str:
+def save_video_tmp(file: UploadFile) -> Tuple[str, str]:
     session_id = f"session_{uuid.uuid4().hex}"
-    file_path = TEMP_VIDEO_DIR / f"{session_id}.mp4"
+    video_name = f"{session_id}.mp4"
+    file_path = TEMP_VIDEO_DIR / video_name
         
     with file_path.open("wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    return file_path
+    return str(file_path), video_name
 
 def save_extracted_frames(video_name: str, frames: list) -> list[str]:
     core_name = Path(video_name).stem
@@ -36,22 +36,16 @@ def save_extracted_frames(video_name: str, frames: list) -> list[str]:
 
     return frames_names
 
-def save_upload_video_and_frames(file: UploadFile) -> Tuple[list[str], str]:
-    session_id = f"session_{uuid.uuid4().hex}"
-    video_name = f"{session_id}.mp4"
-    file_path = TEMP_VIDEO_DIR / video_name
-        
-    with file_path.open("wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+def save_frames(video_path: str) -> list[str]:
+    frames = extract_frames(video_path)
+    video_path = Path(video_path)
+    core_name = Path(video_path).stem
 
-    frames = extract_frames(file_path)
+    pathes = save_extracted_frames(core_name, frames)
 
-    pathes = save_extracted_frames(video_name, frames)
-    delete_vid_msg = deleve_video(video_name)
+    return pathes
 
-    return pathes, delete_vid_msg
-
-def deleve_video(video_name: str) -> str:
+def delete_video(video_name: str) -> str:
     video_path = TEMP_VIDEO_DIR / video_name
 
     if video_path.exists() and video_path.is_file():
