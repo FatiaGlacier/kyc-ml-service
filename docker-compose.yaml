@@ -38,7 +38,7 @@ services:
       - CELERY_BROKER_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672//
       - CELERY_RESULT_BACKEND=redis://redis:${REDIS_PORT}/${REDIS_DB}
     env_file:
-      - .env
+      - .env.docker
 
 volumes:
   rabbitmq-data:
