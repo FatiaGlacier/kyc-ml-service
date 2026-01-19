@@ -21,7 +21,7 @@ services:
     image: redis:7-alpine
     container_name: redis-CELERY_RESULT_BACKEND
     ports:
-      - "${REDIS_PORT}:6379"
+      - "6379:6379"
     volumes:
       - redis-data:/data
   celery_worker:
@@ -32,9 +32,11 @@ services:
       rabbitmq:
         condition: service_healthy
     volumes:
-      - ./app:/app/app 
+      - ./app:/app/app
       - ./temp:/app/temp
+      - ./.env.docker:/app/.env.docker
     environment:
+      - ENV_FILE=.env.docker
       - CELERY_BROKER_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672//
       - CELERY_RESULT_BACKEND=redis://redis:${REDIS_PORT}/${REDIS_DB}
     env_file:
