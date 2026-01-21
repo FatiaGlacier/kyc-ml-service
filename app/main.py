@@ -1,7 +1,7 @@
+import app_config 
 from fastapi import FastAPI
 from app.api import video
 from dotenv import load_dotenv
-import app.app_config 
 
 app = FastAPI()
 
