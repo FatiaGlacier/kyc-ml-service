@@ -1,6 +1,6 @@
 from fastapi import APIRouter, File, UploadFile
 from app.services.storage_service import  save_video_tmp, save_frames,  delete_video, save_frames_name
-from app.tasks.tasks import save_frames_task
+from ...celery.tasks import save_frames_task
 
 router = APIRouter(prefix="/video", tags=["Video"])
 

@@ -1,7 +1,7 @@
 from pathlib import Path
 from app.services.storage_service import extract_frames, save_extracted_frames
 import os
-from app.celery_app import app, VIDEOS_DIR
+from celery_app import app, VIDEOS_DIR
 
 PATH = str(VIDEOS_DIR)
 
