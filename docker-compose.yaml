@@ -2,7 +2,7 @@ services:
 
   rabbitmq:
     image: rabbitmq:3-management-alpine
-    hostname: rabbitmq-CELERY_BROKER
+    hostname: kyc-celery-tasks-queue
     container_name: rabbitmq
     ports:
       - "5672:5672"
@@ -17,30 +17,70 @@ services:
       interval: 10s
       timeout: 10s
       retries: 5
+
   redis:
     image: redis:7-alpine
-    container_name: redis-CELERY_RESULT_BACKEND
+    container_name: kyc-celery-result-backend
     ports:
       - "6379:6379"
     volumes:
       - redis-data:/data
-  celery_worker:
-    build: .
-    container_name: celery_worker
-    command: celery -A app.celery_app worker --loglevel=info --pool=solo
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-    volumes:
-      - ./app:/app/app
-      - ./temp:/app/temp
-      - ./.env.docker:/app/.env.docker
-    environment:
-      - ENV_FILE=.env.docker
-      - CELERY_BROKER_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672//
-      - CELERY_RESULT_BACKEND=redis://redis:${REDIS_PORT}/${REDIS_DB}
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  fastapi:
+    build:
+      context: .
+      dockerfile: Dockerfile.app
+    container_name: kyc-fastapi-service
+    ports:
+      - "8000:8000"
     env_file:
       - .env.docker
+    environment:
+      - ENVIRONMENT=docker
+      - CELERY_BROKER_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672//
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - ./app/main.py:/app/app/main.py
+      - ./app/app_config.py:/app/app/app_config.py
+      - ./app/api:/app/app/api/
+      - ./app/services:/app/app/services/
+      - ./app/utils:/app/app/utils/
+      - ./temp/frames:/app/temp/frames
+      - ./temp/videos:/app/temp/videos
+    depends_on:
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.celery
+    container_name: kyc-celery-worker
+    env_file:
+      - .env.docker
+    environment:
+      - ENVIRONMENT=docker
+      - CELERY_BROKER_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672//
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - ./celery:/app/celery
+      - ./app/services:/app/app/services
+      - ./app/utils:/app/app/utils
+      - ./app/app_config.py:/app/app/app_config.py
+      - ./temp/frames:/app/temp/frames
+      - ./temp/videos:/app/temp/videos
+    depends_on:
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
 volumes:
   rabbitmq-data:
