@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-env_file = os.getenv("ENV_FILE", ".env.local")
+env_file = os.getenv("ENV_FILE")
 load_dotenv(env_file, override=True)
 
 print(f"[CONFIG] Loading environment from: {env_file}")

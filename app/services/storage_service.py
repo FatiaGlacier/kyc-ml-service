@@ -6,22 +6,25 @@ import shutil
 import cv2
 from app.services.video_processing import extract_frames
 from app.app_config import VIDEOS_DIR_STR, FRAMES_DIR_STR
+import os
 
 def save_video_tmp(file: UploadFile) -> Tuple[str, str]:
     session_id = f"session_{uuid.uuid4().hex}"
     video_name = f"{session_id}.mp4"
-    file_path = VIDEOS_DIR_STR + "\\" + video_name
+    file_path = VIDEOS_DIR_STR + "/" + video_name
     
     print(file_path)
 
     with Path(file_path).open("wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
+    print("filepath: " + str(file_path) + "name: " + str(video_name))
+
     return str(file_path), str(video_name)
 
 def save_extracted_frames(video_name: str, frames: list) -> list[str]:
     core_name = Path(video_name).stem
-    frames_dir = FRAMES_DIR_STR + "\\" + core_name
+    frames_dir = FRAMES_DIR_STR + "/" + core_name
     Path(frames_dir).mkdir(parents=True, exist_ok=True)
 
     frames_names = []
@@ -29,7 +32,7 @@ def save_extracted_frames(video_name: str, frames: list) -> list[str]:
 
     for idx, frame in enumerate(frames):
         frame_name = f"{core_name}_{idx:03d}.jpg"
-        frame_path = frames_dir + "\\" + frame_name
+        frame_path = frames_dir + "/" + frame_name
         cv2.imwrite(str(frame_path), frame)
         frames_names.append(frame_name)
         count+=1
@@ -47,7 +50,7 @@ def save_frames(video_path: str) -> list[str]:
     return pathes
 
 def save_frames_name(video_name: str) -> list[str]:
-    video_path = VIDEOS_DIR_STR + "\\" + video_name
+    video_path = VIDEOS_DIR_STR + "/" + video_name
     frames = extract_frames(video_path)
     core_name = Path(video_path).stem
 
@@ -56,7 +59,7 @@ def save_frames_name(video_name: str) -> list[str]:
     return pathes
 
 def delete_video(video_name: str) -> str:
-    video_path = VIDEOS_DIR_STR + "\\" + video_name
+    video_path = VIDEOS_DIR_STR + "/" + video_name
     path_obj = Path(video_path)
 
     if path_obj.exists() and path_obj.is_file():
