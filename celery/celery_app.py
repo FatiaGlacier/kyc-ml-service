@@ -11,9 +11,9 @@ print(f"[CONFIG] FRAMES_DIR from env: {os.getenv("FRAMES_DIR")}")
 VIDEOS_DIR = str(os.getenv("VIDEOS_DIR"))
 
 app = Celery(
-    "app.celery_app",
+    "celery_app",
     broker=os.getenv("CELERY_BROKER_URL"),
     backend=os.getenv("CELERY_RESULT_BACKEND"),
 )
 
-app.autodiscover_tasks(['app.tasks'])
+app.autodiscover_tasks(['celery.tasks'])
